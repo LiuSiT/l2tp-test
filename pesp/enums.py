@@ -1,5 +1,6 @@
 import enum
 
+
 class TypeEnum(enum.IntEnum):
     @classmethod
     def _missing_(cls, value):
@@ -7,6 +8,7 @@ class TypeEnum(enum.IntEnum):
         obj._name_ = f'{cls.__name__}_{value}'
         obj._value_ = value
         return obj
+
 
 class MsgFlag(enum.IntFlag):
     NONE = 0x00
@@ -16,6 +18,7 @@ class MsgFlag(enum.IntFlag):
     Initiator = 0x08
     CanUseHigherVersion = 0x10
     Response = 0x20
+
 
 class Exchange(TypeEnum):
     IKE_BASE_1 = 1
@@ -34,6 +37,7 @@ class Exchange(TypeEnum):
     GSA_AUTH = 39
     GSA_REGISTRATION = 40
     GSA_REKEY = 41
+
 
 class Payload(TypeEnum):
     NONE = 0
@@ -82,6 +86,7 @@ class Payload(TypeEnum):
     SKF = 53
     PS = 54
 
+
 class Protocol(TypeEnum):
     NONE = 0
     IKE = 1
@@ -90,12 +95,14 @@ class Protocol(TypeEnum):
     FC_ESP_HEADER = 4
     FC_CT_AUTHENTICATION = 5
 
+
 class Transform(TypeEnum):
     ENCR = 1
     PRF = 2
     INTEG = 3
     DH = 4
     ESN = 5
+
 
 class EncrId(TypeEnum):
     ENCR_DES = 2
@@ -126,6 +133,7 @@ class EncrId(TypeEnum):
     ENCR_AES_GCM_16_IIV = 30
     ENCR_CHACHA20_POLY1305_IIV = 31
 
+
 class PrfId(TypeEnum):
     PRF_HMAC_MD5 = 1
     PRF_HMAC_SHA1 = 2
@@ -135,6 +143,7 @@ class PrfId(TypeEnum):
     PRF_HMAC_SHA2_384 = 6
     PRF_HMAC_SHA2_512 = 7
     PRF_AES128_CMAC = 8
+
 
 class IntegId(TypeEnum):
     AUTH_NONE = 0
@@ -152,6 +161,7 @@ class IntegId(TypeEnum):
     AUTH_HMAC_SHA2_256_128 = 12
     AUTH_HMAC_SHA2_384_192 = 13
     AUTH_HMAC_SHA2_512_256 = 14
+
 
 class DhId(TypeEnum):
     DH_NONE = 0
@@ -178,9 +188,11 @@ class DhId(TypeEnum):
     DH_31 = 31
     DH_32 = 32
 
+
 class EsnId(TypeEnum):
     NO_ESN = 0
     ESN = 1
+
 
 TransformTable = {
     Transform.ENCR: EncrId,
@@ -189,6 +201,7 @@ TransformTable = {
     Transform.DH: DhId,
     Transform.ESN: EsnId
 }
+
 
 class Notify(TypeEnum):
     UNSUPPORTED_CRITICAL_PAYLOAD = 1
@@ -296,6 +309,7 @@ class Notify(TypeEnum):
     ISAKMP_NTYPE_LOAD_BALANCE = 40501
     ISAKMP_NTYPE_HEARTBEAT = 40503
 
+
 class IDType(TypeEnum):
     ID_IPV4_ADDR = 1
     ID_FQDN = 2
@@ -311,6 +325,7 @@ class IDType(TypeEnum):
     ID_FC_NAME = 12
     ID_NULL = 13
 
+
 class AuthMethod(TypeEnum):
     RSA = 1
     PSK = 2
@@ -322,11 +337,13 @@ class AuthMethod(TypeEnum):
     NULL_AUTH = 13
     DIGITAL = 14
 
+
 class CFGType(TypeEnum):
     CFG_REQUEST = 1
     CFG_REPLY = 2
     CFG_SET = 3
     CFG_ACK = 4
+
 
 class CPAttrType(TypeEnum):
     INTERNAL_IP4_ADDRESS = 1
@@ -374,10 +391,12 @@ class CPAttrType(TypeEnum):
     UNITY_DDNS_HOSTNAME = 28682
     CICSO_UNKNOWN_SEEN_ON_IPHONE = 28683
 
+
 class TSType(TypeEnum):
     TS_IPV4_ADDR_RANGE = 7
     TS_IPV6_ADDR_RANGE = 8
     TS_FC_ADDR_RANGE = 9
+
 
 class IpProto(TypeEnum):
     ANY = 0
@@ -394,6 +413,7 @@ class IpProto(TypeEnum):
     MH = 135
     RAW = 255
 
+
 class EAPCode(TypeEnum):
     REQUEST = 1
     RESPONSE = 2
@@ -401,6 +421,7 @@ class EAPCode(TypeEnum):
     FAILURE = 4
     INITIATE = 5
     FINISH = 6
+
 
 class TransformAttr(TypeEnum):
     ENCR = 1
@@ -420,6 +441,7 @@ class TransformAttr(TypeEnum):
     FIELD_SIZE = 15
     DH_ORDER = 16
 
+
 class ESPAttr(TypeEnum):
     LIFE_TYPE = 1
     DURATION = 2
@@ -437,6 +459,7 @@ class ESPAttr(TypeEnum):
     ADDR_PRESERVE = 14
     SA_DIRECTION = 15
 
+
 class EncModeId_1(TypeEnum):
     ANY = 0
     TUNNEL = 1
@@ -445,6 +468,7 @@ class EncModeId_1(TypeEnum):
     UDPTRNS_RFC = 4
     UDPTUNNEL_DRAFT = 61443
     UDPTRNS_DRAFT = 61444
+
 
 class IntegId_1(TypeEnum):
     AUTH_NONE = 0
@@ -462,10 +486,12 @@ class IntegId_1(TypeEnum):
     AUTH_AES_192_GMAC = 12
     AUTH_AES_256_GMAC = 13
 
+
 ESPTable_1 = {
     ESPAttr.ENC_MODE: EncModeId_1,
     ESPAttr.AUTH: IntegId_1,
 }
+
 
 class EncrId_1(TypeEnum):
     DES_CBC = 1
@@ -477,6 +503,7 @@ class EncrId_1(TypeEnum):
     AES_CBC = 7
     CAMELLIA_CBC = 8
 
+
 class HashId_1(TypeEnum):
     MD5 = 1
     SHA = 2
@@ -484,6 +511,7 @@ class HashId_1(TypeEnum):
     SHA2_256 = 4
     SHA2_384 = 5
     SHA2_512 = 6
+
 
 class AuthId_1(TypeEnum):
     PSK = 1
@@ -496,14 +524,15 @@ class AuthId_1(TypeEnum):
     ECDSA_SHA_512 = 11
     XAUTHInitPreShared = 65001
     XAUTHRespPreShared = 65002
-    XAUTHInitDSS       = 65003
-    XAUTHRespDSS       = 65004
-    XAUTHInitRSA       = 65005
-    XAUTHRespRSA       = 65006
+    XAUTHInitDSS = 65003
+    XAUTHRespDSS = 65004
+    XAUTHInitRSA = 65005
+    XAUTHRespRSA = 65006
     XAUTHInitRSAEncryption = 65007
     XAUTHRespRSAEncryption = 65008
     XAUTHInitRSARevisedEncryption = 65009
     XAUTHRespRSARevisedEncryption = 65010
+
 
 TransformTable_1 = {
     TransformAttr.ENCR: EncrId_1,
@@ -511,6 +540,7 @@ TransformTable_1 = {
     TransformAttr.AUTH: AuthId_1,
     TransformAttr.DH: DhId,
 }
+
 
 class L2TPType(TypeEnum):
     SCCRQ = 1
@@ -527,6 +557,7 @@ class L2TPType(TypeEnum):
     CDN = 14
     WEN = 15
     SLI = 16
+
 
 class L2TPAttr(TypeEnum):
     MsgType = 0
@@ -568,5 +599,3 @@ class L2TPAttr(TypeEnum):
     ProxyAuthenResponse = 33
     CallErrors = 34
     ACCM = 35
-
-

@@ -1,30 +1,35 @@
 from setuptools import setup
-import os, re
+import os
+import re
+
 
 def read(*names, **kwargs):
     with open(os.path.join(os.path.dirname(__file__), *names), encoding='utf8') as fp:
         return fp.read()
 
+
 def find_value(name):
     data_file = read('pesp', '__doc__.py')
-    data_match = re.search(r"^__%s__ += ['\"]([^'\"]*)['\"]" % name, data_file, re.M)
+    data_match = re.search(
+        r"^__%s__ += ['\"]([^'\"]*)['\"]" % name, data_file, re.M)
     if data_match:
         return data_match.group(1)
     raise RuntimeError(f"Unable to find '{name}' string.")
 
+
 setup(
-    name                = find_value('title'),
-    version             = find_value('version'),
-    description         = find_value('description'),
-    long_description    = read('README.rst'),
-    url                 = find_value('url'),
-    author              = find_value('author'),
-    author_email        = find_value('email'),
-    license             = find_value('license'),
-    python_requires     = '>=3.6',
-    keywords            = find_value('keywords'),
-    packages            = ['pesp'],
-    classifiers         = [
+    name=find_value('title'),
+    version=find_value('version'),
+    description=find_value('description'),
+    long_description=read('README.rst'),
+    url=find_value('url'),
+    author=find_value('author'),
+    author_email=find_value('email'),
+    license=find_value('license'),
+    python_requires='>=3.6',
+    keywords=find_value('keywords'),
+    packages=['pesp'],
+    classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
@@ -35,11 +40,11 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    install_requires    = [
+    install_requires=[
         'pycryptodome >= 3.7.2',
         'pproxy >= 2.0.0',
     ],
-    entry_points        = {
+    entry_points={
         'console_scripts': [
             'pesp = pesp.server:main',
         ],

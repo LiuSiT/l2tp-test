@@ -1,6 +1,10 @@
-import hashlib, os, random, hmac
+import hashlib
+import os
+import random
+import hmac
 from Crypto.Cipher import AES
 from . import enums
+
 
 class Prf:
     DIGESTS_1 = {
@@ -17,15 +21,20 @@ class Prf:
         enums.PrfId.PRF_HMAC_SHA2_384: (hashlib.sha384, 48),
         enums.PrfId.PRF_HMAC_SHA2_512: (hashlib.sha512, 64),
     }
+
     def __init__(self, transform):
-        self.hasher, self.key_size = self.DIGESTS[transform] if type(transform) is enums.PrfId else self.DIGESTS_1[transform]
+        self.hasher, self.key_size = self.DIGESTS[transform] if type(
+            transform) is enums.PrfId else self.DIGESTS_1[transform]
+
     def prf(self, key, data):
         return hmac.HMAC(key, data, digestmod=self.hasher).digest()
+
     def prfplus(self, key, seed, count=True):
         temp = bytes()
         for i in range(1, 1024):
             temp = self.prf(key, temp + seed + (bytes([i]) if count else b''))
             yield from temp
+
 
 class Integrity:
     DIGESTS_1 = {
@@ -44,28 +53,38 @@ class Integrity:
         enums.IntegId.AUTH_HMAC_SHA2_384_192: (hashlib.sha384, 48, 24),
         enums.IntegId.AUTH_HMAC_SHA2_512_256: (hashlib.sha512, 64, 32),
     }
+
     def __init__(self, transform):
-        self.hasher, self.key_size, self.hash_size = self.DIGESTS[transform] if type(transform) is enums.IntegId else self.DIGESTS_1[transform]
+        self.hasher, self.key_size, self.hash_size = self.DIGESTS[transform] if type(
+            transform) is enums.IntegId else self.DIGESTS_1[transform]
+
     def compute(self, key, data):
         return hmac.HMAC(key, data, digestmod=self.hasher).digest()[:self.hash_size]
+
 
 class Cipher:
     def __init__(self, transform, keylen):
         assert type(transform) is enums.EncrId and transform == enums.EncrId.ENCR_AES_CBC or \
-               type(transform) is enums.EncrId_1 and transform == enums.EncrId_1.AES_CBC
+            type(transform) is enums.EncrId_1 and transform == enums.EncrId_1.AES_CBC
         self.keylen = keylen
+
     @property
     def block_size(self):
         return 16
+
     @property
     def key_size(self):
         return self.keylen // 8
+
     def encrypt(self, key, iv, data):
         return AES.new(key, AES.MODE_CBC, iv=iv).encrypt(data)
+
     def decrypt(self, key, iv, data):
         return AES.new(key, AES.MODE_CBC, iv=iv).decrypt(data)
+
     def generate_iv(self):
         return os.urandom(self.block_size)
+
 
 class Crypto:
     def __init__(self, cipher, sk_e, integrity=None, sk_a=None, prf=None, sk_p=None, *, iv=None):
@@ -78,52 +97,69 @@ class Crypto:
         self.iv = {0: iv}
         self.last_iv = None
         self.m_id = set()
+
     def decrypt_esp(self, encrypted):
         iv = encrypted[:self.cipher.block_size]
-        ciphertext = encrypted[self.cipher.block_size:len(encrypted)-self.integrity.hash_size]
+        ciphertext = encrypted[self.cipher.block_size:len(
+            encrypted)-self.integrity.hash_size]
         plain = self.cipher.decrypt(self.sk_e, bytes(iv), bytes(ciphertext))
         next_header = plain[-1]
         padlen = plain[-2]
         return next_header, plain[:-2-padlen]
+
     def encrypt_esp(self, next_header, plain):
         iv = self.cipher.generate_iv()
-        padlen = self.cipher.block_size - ((len(plain)+1) % self.cipher.block_size) - 1
+        padlen = self.cipher.block_size - \
+            ((len(plain)+1) % self.cipher.block_size) - 1
         plain += b'\x00' * padlen + bytes([padlen, next_header])
         encrypted = self.cipher.encrypt(self.sk_e, bytes(iv), bytes(plain))
         return iv + encrypted + bytes(self.integrity.hash_size)
+
     def encrypt_1(self, plain, m_id):
         if m_id not in self.iv:
-            self.iv[m_id] = self.prf.hasher(self.iv[0]+m_id.to_bytes(4, 'big')).digest()[:self.cipher.block_size]
-        padlen = self.cipher.block_size - ((len(plain)+1) % self.cipher.block_size)
+            self.iv[m_id] = self.prf.hasher(
+                self.iv[0]+m_id.to_bytes(4, 'big')).digest()[:self.cipher.block_size]
+        padlen = self.cipher.block_size - \
+            ((len(plain)+1) % self.cipher.block_size)
         plain += b'\x00' * padlen + bytes([padlen])
         encrypted = self.cipher.encrypt(self.sk_e, self.iv[m_id], bytes(plain))
         self.iv[m_id] = encrypted[-self.cipher.block_size:]
         return encrypted
+
     def decrypt_1(self, encrypted, m_id):
         if m_id not in self.iv:
-            self.iv[m_id] = self.prf.hasher(self.iv[0]+m_id.to_bytes(4, 'big')).digest()[:self.cipher.block_size]
+            self.iv[m_id] = self.prf.hasher(
+                self.iv[0]+m_id.to_bytes(4, 'big')).digest()[:self.cipher.block_size]
         plain = self.cipher.decrypt(self.sk_e, self.iv[m_id], encrypted)
         self.iv[m_id] = encrypted[-self.cipher.block_size:]
         padlen = plain[-1]
         # do not remove padding according to ios cisco ipsec bug
         return plain
+
     def decrypt(self, encrypted):
         iv = encrypted[:self.cipher.block_size]
-        ciphertext = encrypted[self.cipher.block_size:len(encrypted)-self.integrity.hash_size]
+        ciphertext = encrypted[self.cipher.block_size:len(
+            encrypted)-self.integrity.hash_size]
         plain = self.cipher.decrypt(self.sk_e, bytes(iv), bytes(ciphertext))
         padlen = plain[-1]
         return plain[:-1-padlen]
+
     def encrypt(self, plain):
         iv = self.cipher.generate_iv()
-        padlen = self.cipher.block_size - (len(plain) % self.cipher.block_size) - 1
+        padlen = self.cipher.block_size - \
+            (len(plain) % self.cipher.block_size) - 1
         plain += b'\x00' * padlen + bytes([padlen])
         encrypted = self.cipher.encrypt(self.sk_e, bytes(iv), bytes(plain))
         return iv + encrypted + bytes(self.integrity.hash_size)
+
     def verify_checksum(self, encrypted):
-        checksum = self.integrity.compute(self.sk_a, encrypted[:len(encrypted)-self.integrity.hash_size])
+        checksum = self.integrity.compute(
+            self.sk_a, encrypted[:len(encrypted)-self.integrity.hash_size])
         assert checksum == encrypted[len(encrypted)-self.integrity.hash_size:]
+
     def add_checksum(self, encrypted):
-        checksum = self.integrity.compute(self.sk_a, encrypted[:len(encrypted)-self.integrity.hash_size])
+        checksum = self.integrity.compute(
+            self.sk_a, encrypted[:len(encrypted)-self.integrity.hash_size])
         encrypted[len(encrypted)-len(checksum):] = checksum
 
 
@@ -150,31 +186,34 @@ PRIMES = {
     enums.DhId.DH_30: (0xAADD9DB8DBE9C48B3FD4E6AE33C9FC07CB308DB3B3C9D20ED6639CCA703308717D4D9B009BC66842AECDA12AE6A380E62881FF2F2D82C68528AA6056583A48F3, (0x81AEE4BDD82ED9645A21322E9C4C6A9385ED9F70B5D916C1B43B62EEF4D0098EFF3B1F78E2D0D48D50D1687B93B97D5F7C6D5047406A5E688B352209BCB9F8227DDE385D566332ECC0EABFA9CF7822FDF209F70024A57B1AA000C55B881F8111B2DCDE494A5F485E5BCA4BD88A2763AED1CA2B2FA8F0540678CD1E0F3AD80892, 0x7830A3318B603B89E2327145AC234CC594CBDD8D3DF91610A83441CAEA9863BC2DED5D5AA8253AA10A2EF1C98B9AC8B57F1117A72BF2C7B9E7C1AC4D77FC94CA), 64),
 }
 
+
 def ec_add(P, Q, l, p, a):
     if P == 0:
         return Q
     if P == Q:
-        z = (3*(P>>l)*(P>>l)+a) * pow(2*(P&(1<<l)-1), p-2, p)
+        z = (3*(P >> l)*(P >> l)+a) * pow(2*(P & (1 << l)-1), p-2, p)
     else:
-        z = ((Q&(1<<l)-1) - (P&(1<<l)-1)) * pow((Q>>l)-(P>>l), p-2, p)
-    x = (z*z - (P>>l) - (Q>>l)) % p
-    return x<<l | (z*((P>>l)-x) - (P&(1<<l)-1)) % p
+        z = ((Q & (1 << l)-1) - (P & (1 << l)-1)) * \
+            pow((Q >> l)-(P >> l), p-2, p)
+    x = (z*z - (P >> l) - (Q >> l)) % p
+    return x << l | (z*((P >> l)-x) - (P & (1 << l)-1)) % p
+
 
 def ec_mul(P, l, i, p, a):
     r = 0
     while i > 0:
         if i & 1:
-            r = ec_add(r, P, l<<3, p, a)
-        i, P = i>>1, ec_add(P, P, l<<3, p, a)
+            r = ec_add(r, P, l << 3, p, a)
+        i, P = i >> 1, ec_add(P, P, l << 3, p, a)
     return r
+
 
 def DiffieHellman(group, peer):
     if group not in PRIMES:
         raise Exception(f'Unsupported DH Group DH_{group}')
     p, g, l = PRIMES[group]
-    a = random.randrange(p>>8, p)
+    a = random.randrange(p >> 8, p)
     if type(g) is tuple:
         return ec_mul(g[0], l, a, p, g[1]).to_bytes(l*2, 'big'), ec_mul(int.from_bytes(peer, 'big'), l, a, p, g[1]).to_bytes(l*2, 'big')[:l]
     else:
         return pow(g, a, p).to_bytes(l, 'big'), pow(int.from_bytes(peer, 'big'), a, p).to_bytes(l, 'big')
-
